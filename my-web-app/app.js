@@ -19,6 +19,7 @@ function getLocalIp() {
 
 app.get('/', (req, res) => {
   const ip = getLocalIp();
+  console.log(ip);
   res.send(`Hello from Dockerized Node.js App! Server IP: ${ip}`);
 });
 
