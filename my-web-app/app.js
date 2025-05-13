@@ -1,25 +1,34 @@
 const express = require('express');
 const axios = require('axios');
+const os = require('os');
+const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Set EJS as the template engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Helper function to get the EC2 instance private IP from metadata
-async function getEc2PrivateIp() {
-  try {
-    const response = await axios.get('http://169.254.169.254/latest/meta-data/local-ipv4', {
-      timeout: 1000
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching EC2 IP:', error.message);
-    return 'unknown';
+function getLocalIp() {
+  const interfaces = os.networkInterfaces();
+  for (let iface of Object.values(interfaces)) {
+    for (let i = 0; i < iface.length; i++) {
+      const alias = iface[i];
+      if (alias.family === 'IPv4' && !alias.internal) {
+        return alias.address;
+      }
+    }
   }
+  return 'unknown';
 }
 
-app.get('/', async (req, res) => {
-  const ip = await getEc2PrivateIp();
-  console.log(ip);
-  res.send(`Hello from Dockerized Node.js App! EC2 IP: ${ip}`);
+// Route to render the Todo app
+app.get('/', (req, res) => {
+  res.render('index');
 });
 
 app.get('/health', (req, res) => {
