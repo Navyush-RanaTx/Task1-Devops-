@@ -1,9 +1,25 @@
 const express = require('express');
+const os = require('os');
 const app = express();
-const PORT = process.env.PORT || 3000;  // Default to port 3000
+const PORT = process.env.PORT || 3000;
+
+// Helper function to get the server's IP address
+function getLocalIp() {
+  const interfaces = os.networkInterfaces();
+  for (let iface of Object.values(interfaces)) {
+    for (let i = 0; i < iface.length; i++) {
+      const alias = iface[i];
+      if (alias.family === 'IPv4' && !alias.internal) {
+        return alias.address;
+      }
+    }
+  }
+  return 'unknown';
+}
 
 app.get('/', (req, res) => {
-  res.send('Hello from Dockerized Node.js App!');
+  const ip = getLocalIp();
+  res.send(`Hello from Dockerized Node.js App! Server IP: ${ip}`);
 });
 
 app.get('/health', (req, res) => {
