@@ -1,33 +1,31 @@
 const express = require('express');
-const os = require('os');
+const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Helper function to get the server's IP address
-function getLocalIp() {
-  const interfaces = os.networkInterfaces();
-  for (let iface of Object.values(interfaces)) {
-    for (let i = 0; i < iface.length; i++) {
-      const alias = iface[i];
-      if (alias.family === 'IPv4' && !alias.internal) {
-        return alias.address;
-      }
-    }
+// Helper function to get the EC2 instance private IP from metadata
+async function getEc2PrivateIp() {
+  try {
+    const response = await axios.get('http://169.254.169.254/latest/meta-data/local-ipv4', {
+      timeout: 1000
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching EC2 IP:', error.message);
+    return 'unknown';
   }
-  return 'unknown';
 }
 
-app.get('/', (req, res) => {
-  const ip = getLocalIp();
+app.get('/', async (req, res) => {
+  const ip = await getEc2PrivateIp();
   console.log(ip);
-  res.send(`Hello from Dockerized Node.js App! Server IP: ${ip}`);
+  res.send(`Hello from Dockerized Node.js App! EC2 IP: ${ip}`);
 });
 
 app.get('/health', (req, res) => {
   res.send('OK');
 });
 
-// Ensure the app listens on all network interfaces
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
